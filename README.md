@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.1.0-lightgrey)](pyproject.toml)
 
-19 nodes built by a VFX artist for VFX work: generative editing, lens optics, glow, grain, color correction with a vectorscope, relighting, layer compositing, wedging and more. Every node processes the final render on the GPU (PyTorch/CUDA, CPU fallback) and shows you a **real-time preview inside the node** using the exact same math — tweak, see, run.
+18 nodes built by a VFX artist for VFX work: generative editing, lens optics, glow, grain, color correction with a vectorscope, relighting, layer compositing, wedging and more. Every node processes the final render on the GPU (PyTorch/CUDA, CPU fallback) and shows you a **real-time preview inside the node** using the exact same math — tweak, see, run.
 
 <!-- TODO screenshots: drop 2-3 PNGs into docs/ and uncomment
 | | | |
@@ -55,7 +55,6 @@ Restart ComfyUI. All nodes appear under the `image/adjust`, `image/generation`, 
 | [ER Wedge Sequencer](#er-wedge-sequencer--er-wedge-preview) (+Video) | utils | VFX-style wedging: run value lists/ranges and compare labelled results |
 | [ER Wedge Preview](#er-wedge-sequencer--er-wedge-preview) (+Video) | utils | Client-facing gallery of every wedge + contact sheet export |
 | [ER Video Comparer](#er-video-comparer) | preview | Real-time A/B wipe between two videos |
-| [ER Model Downloader](#er-model-downloader) | utils | Scans the workflow for missing models and downloads each to its folder |
 
 Each sub-folder (`er_editgen/`, `er_lens_fx/`, …) ships its own detailed README.
 
@@ -164,12 +163,6 @@ VFX-style **wedging** (as in Houdini): link any node widget, give it a list (`7,
 Real-time **A/B wipe** between two videos (frame batches): drag the wipe line, play/pause both in sync, scrub the timeline. Different resolutions are letterboxed automatically; different durations loop B against A. Auto FPS.
 
 [Full docs →](er_video_comparer/README.md)
-
-### ER Model Downloader
-
-Press **Scan workflow** and the node lists every model file the workflow uses, which `models/` subfolder it belongs to, and whether it is installed or **missing**. For missing ones it pre-fills embedded URLs, searches HuggingFace by exact file name (blob → resolve rewrite, HTML responses rejected) or accepts a pasted `https://` URL, then downloads to the right folder with a progress bar, resume-safe (`.part` files). Gated HF models need `HF_TOKEN` in the environment.
-
-[Full docs →](er_model_downloader/README.md)
 
 ---
 
