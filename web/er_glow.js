@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, TF, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme();
 
@@ -439,6 +440,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
             if (!logo.complete || !logo.naturalWidth) return;
@@ -497,7 +499,7 @@ app.registerExtension({
             const abBtn = document.createElement("button");
             abBtn.className = "er-btn";
             abBtn.textContent = "A|B";
-            abBtn.title = "Toggle before/after";
+            abBtn.title = T("Toggle before/after");
             abBtn.style.cssText =
                 "position:absolute;top:6px;right:6px;height:22px;font-size:11px;line-height:1;padding:0 8px;opacity:.85;";
             stage.appendChild(abBtn);
@@ -526,7 +528,7 @@ app.registerExtension({
                 groupsBox.innerHTML = "";
                 const p = getP();
                 viewTag.style.display = Math.round(p.view) ? "block" : "none";
-                viewTag.textContent = VIEW_MODES[Math.round(p.view)] || "";
+                viewTag.textContent = T(VIEW_MODES[Math.round(p.view)] || "");
 
                 GROUPS.forEach(([gtitle, rows], gi) => {
                     const open = p._open?.[gi] !== false;  // abierto por defecto
@@ -539,16 +541,16 @@ app.registerExtension({
                     const fold = document.createElement("button");
                     fold.className = "er-btn";
                     fold.textContent = open ? "▾" : "▸";
-                    fold.title = "Expand/collapse";
+                    fold.title = T("Expand/collapse");
                     fold.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 6px;";
                     const title = document.createElement("span");
                     title.className = "er-title";
-                    title.textContent = gtitle;
+                    title.textContent = T(gtitle);
                     title.style.cssText = "flex:1;";
                     const reset = document.createElement("button");
                     reset.className = "er-btn";
                     reset.textContent = "⟲";
-                    reset.title = "Reset this group";
+                    reset.title = T("Reset this group");
                     reset.style.cssText = "height:20px;font-size:11px;line-height:1;padding:0 7px;";
                     head.append(fold, title, reset);
 
@@ -564,7 +566,7 @@ app.registerExtension({
                         wrap.style.cssText = "display:flex;align-items:center;gap:4px;";
                         const tag = document.createElement("span");
                         tag.className = "er-dim";
-                        tag.textContent = label;
+                        tag.textContent = T(label);
                         tag.style.cssText = "font-size:9px;width:64px;flex:0 0 auto;user-select:none;";
                         wrap.appendChild(tag);
 
@@ -575,7 +577,7 @@ app.registerExtension({
                             row[2].forEach((name, idx) => {
                                 const o = document.createElement("option");
                                 o.value = String(idx);
-                                o.textContent = name;
+                                o.textContent = T(name);
                                 sel.appendChild(o);
                             });
                             sel.value = String(Math.round(p[key]));
@@ -596,7 +598,7 @@ app.registerExtension({
                             inp.max = String(max);
                             inp.step = String(step);
                             inp.value = String(p[key]);
-                            inp.title = label + " (double click: reset)";
+                            inp.title = TF("{label} (double click: reset)", { label: T(label) });
                             inp.style.cssText = "flex:1;height:12px;cursor:pointer;min-width:30px;";
                             const num = document.createElement("input");
                             num.type = "number";
@@ -655,6 +657,12 @@ app.registerExtension({
                 });
             };
             rebuildUI();
+
+            // language switch: retranslate the static labels and rebuild panels
+            node._erRelabel = () => {
+                abBtn.title = T("Toggle before/after");
+                rebuildUI();
+            };
 
             const onConfigureG = node.onConfigure;
             node.onConfigure = function (info) {

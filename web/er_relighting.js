@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, TF, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme(); // inyecta la hoja de estilos ER Academy una sola vez
 
@@ -191,6 +192,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         // logo en la barra de título
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
@@ -271,9 +273,12 @@ app.registerExtension({
                     "height:20px;border-radius:4px;cursor:pointer;font-size:10px;line-height:1;padding:0 8px;";
                 return b;
             };
-            const addBtn = mkBtn("＋ Light", "Add a point light");
+            const addBtn = mkBtn(T("＋ Light"), T("Add a point light"));
             addBtn.className = "er-btn-primary"; // accion principal en cyan
-            const viewBtn = mkBtn("View: Result", "Cycle view: result / depth / normals");
+            const viewBtn = mkBtn(
+                TF("View: {mode}", { mode: T("Result") }),
+                T("Cycle view: result / depth / normals")
+            );
             const chipsBox = document.createElement("div");
             chipsBox.style.cssText = "display:flex;gap:4px;align-items:center;";
             lightsBar.append(addBtn, chipsBox, viewBtn);
@@ -284,13 +289,13 @@ app.registerExtension({
             const colorIn = document.createElement("input");
             colorIn.type = "color";
             colorIn.value = "#ffffff";
-            colorIn.title = "Light color";
+            colorIn.title = T("Light color");
             colorIn.style.cssText = "width:26px;height:20px;border:none;padding:0;background:none;cursor:pointer;";
             const mkSlider = (label, min, max, step, title) => {
                 const wrap = document.createElement("div");
                 wrap.style.cssText = "display:flex;align-items:center;gap:3px;flex:1;";
                 const tag = document.createElement("span");
-                tag.textContent = label;
+                tag.textContent = T(label);
                 tag.className = "er-dim";
                 tag.style.cssText = "font-size:9px;user-select:none;";
                 const inp = document.createElement("input");
@@ -299,23 +304,23 @@ app.registerExtension({
                 inp.min = String(min);
                 inp.max = String(max);
                 inp.step = String(step);
-                inp.title = title;
+                inp.title = T(title);
                 inp.style.cssText = "flex:1;height:12px;cursor:pointer;min-width:30px;";
                 wrap.append(tag, inp);
-                return { wrap, inp };
+                return { wrap, inp, tag };
             };
             const intS = mkSlider("Int", 0, 3, 0.01, "Intensity");
             const radS = mkSlider("Rad", 0.1, 2, 0.01, "Attenuation radius");
             const zS = mkSlider("Z", 0.05, 1.5, 0.01, "Light height above the image");
-            const delBtn = mkBtn("✕", "Delete this light");
+            const delBtn = mkBtn("✕", T("Delete this light"));
             delBtn.style.color = ER.error; // rojo semantico: borrar
             lightCtl.append(colorIn, intS.wrap, radS.wrap, zS.wrap, delBtn);
 
             // botones generales
             const controls = document.createElement("div");
             controls.style.cssText = "display:none;align-items:center;gap:6px;flex:0 0 auto;";
-            const resetBtn = mkBtn("Reset", "Reset lights and parameters");
-            const origBtn = mkBtn("👁 Original", "Hold to see the original image");
+            const resetBtn = mkBtn(T("Reset"), T("Reset lights and parameters"));
+            const origBtn = mkBtn(T("👁 Original"), T("Hold to see the original image"));
             controls.append(resetBtn, origBtn);
 
             root.append(stage, lightsBar, lightCtl, controls);
@@ -390,7 +395,7 @@ app.registerExtension({
                 chipsBox.innerHTML = "";
                 chips.length = 0;
                 lights.forEach((l, i) => {
-                    const chip = mkBtn(`L${i + 1}`, "Select this light");
+                    const chip = mkBtn(TF("L{n}", { n: i + 1 }), T("Select this light"));
                     chip.style.borderBottom = `2px solid ${l.color || "#fff"}`;
                     chip.addEventListener("click", (e) => {
                         e.stopPropagation();
@@ -411,7 +416,7 @@ app.registerExtension({
                         `background:${l.color || "#fff"};border:2px solid rgba(255,255,255,0.45);` +
                         `box-shadow:0 0 6px rgba(0,0,0,0.8);cursor:grab;transform:translate(-50%,-50%);` +
                         `left:${l.x * 100}%;top:${l.y * 100}%;`;
-                    m.title = `Light ${i + 1} (drag to move)`;
+                    m.title = TF("Light {n} (drag to move)", { n: i + 1 });
                     overlay.appendChild(m);
                     markers.push(m);
                 });
@@ -488,7 +493,7 @@ app.registerExtension({
             viewBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 viewMode = (viewMode + 1) % VIEWS.length;
-                viewBtn.textContent = `View: ${VIEWS[viewMode]}`;
+                viewBtn.textContent = TF("View: {mode}", { mode: T(VIEWS[viewMode]) });
                 // cyan cuando la vista activa no es la de resultado
                 viewBtn.classList.toggle("er-active", viewMode !== 0);
                 dirty = true;
@@ -794,6 +799,27 @@ app.registerExtension({
             node.onConfigure = function () {
                 onConfigure?.apply(this, arguments);
                 sanitizeWidgets();
+                syncLightUI();
+            };
+
+            // language switch: retranslate the static controls and the chips
+            node._erRelabel = () => {
+                addBtn.textContent = T("＋ Light");
+                addBtn.title = T("Add a point light");
+                viewBtn.title = T("Cycle view: result / depth / normals");
+                viewBtn.textContent = TF("View: {mode}", { mode: T(VIEWS[viewMode]) });
+                resetBtn.textContent = T("Reset");
+                resetBtn.title = T("Reset lights and parameters");
+                origBtn.textContent = T("👁 Original");
+                origBtn.title = T("Hold to see the original image");
+                delBtn.title = T("Delete this light");
+                colorIn.title = T("Light color");
+                intS.tag.textContent = T("Int");
+                intS.inp.title = T("Intensity");
+                radS.tag.textContent = T("Rad");
+                radS.inp.title = T("Attenuation radius");
+                zS.tag.textContent = T("Z");
+                zS.inp.title = T("Light height above the image");
                 syncLightUI();
             };
 

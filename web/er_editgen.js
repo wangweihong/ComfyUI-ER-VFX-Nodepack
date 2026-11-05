@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, TF, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme();
 
@@ -51,6 +52,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
             if (!logo.complete || !logo.naturalWidth) return;
@@ -208,8 +210,7 @@ app.registerExtension({
                 if (promptW.element) {
                     promptW.element.style.maxHeight = `${h}px`;
                     promptW.element.style.overflowY = "auto";
-                    promptW.element.placeholder =
-                        "Describe the edit or the image to generate...";
+                    promptW.element.placeholder = T("Describe the edit or the image to generate...");
                 }
                 fitNode();
             };
@@ -265,14 +266,25 @@ app.registerExtension({
                 b.addEventListener("pointerdown", (e) => e.stopPropagation());
                 return b;
             };
-            const chainBtn = mkBtn("⛓ latent", "Show the latent input, to chain another ER EditGen without going through the VAE");
-            const loraBtn = mkBtn("LoRA", "Add one or more LoRAs, loaded internally (empty list = none)");
-            const advBtn = mkBtn("⚙", "Model, seed, steps and other settings");
-            const expandBtn = mkBtn("⤢", "Expand / shrink the prompt box");
-            const genBtn = mkBtn("▶ Generate", "Run this workflow", true);
+            const chainBtn = mkBtn(
+                T("⛓ latent"),
+                T("Show the latent input, to chain another ER EditGen without going through the VAE")
+            );
+            const loraBtn = mkBtn("LoRA", T("Add one or more LoRAs, loaded internally (empty list = none)"));
+            const advBtn = mkBtn("⚙", T("Model, seed, steps and other settings"));
+            const expandBtn = mkBtn("⤢", T("Expand / shrink the prompt box"));
+            const genBtn = mkBtn(T("▶ Generate"), T("Run this workflow"), true);
             const info = document.createElement("span");
             info.className = "er-dim";
             info.style.cssText = "font-size:9px;flex:1;text-align:right;";
+            // status line: keep the key so it can be retranslated on the fly
+            let infoKey = null;
+            let infoVars = null;
+            const setInfo = (key, vars) => {
+                infoKey = key;
+                infoVars = vars || null;
+                info.textContent = key ? TF(key, vars) : "";
+            };
             bar.append(slots, chainBtn, loraBtn, advBtn, expandBtn, genBtn, info);
             root.appendChild(bar);
 
@@ -316,7 +328,7 @@ app.registerExtension({
                     for (const name of ["", ...options]) {
                         const o = document.createElement("option");
                         o.value = name;
-                        o.textContent = name || "— pick a LoRA —";
+                        o.textContent = name || T("— pick a LoRA —");
                         sel.appendChild(o);
                     }
                     sel.value = options.includes(it.name) ? it.name : "";
@@ -327,12 +339,12 @@ app.registerExtension({
                     num.max = "4";
                     num.step = "0.05";
                     num.value = String(typeof it.strength === "number" ? it.strength : 1);
-                    num.title = "Strength";
+                    num.title = T("Strength");
                     num.style.cssText = "width:52px;flex:0 0 auto;font-size:10px;padding:2px 4px;text-align:right;";
                     const del = document.createElement("button");
                     del.className = "er-btn";
                     del.textContent = "✕";
-                    del.title = "Remove this LoRA";
+                    del.title = T("Remove this LoRA");
                     del.style.cssText = `height:18px;font-size:10px;line-height:1;padding:0 6px;color:${ER.error};`;
                     for (const el of [sel, num, del]) {
                         el.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -362,7 +374,7 @@ app.registerExtension({
                 });
                 const addRow = document.createElement("button");
                 addRow.className = "er-btn";
-                addRow.textContent = "＋ Add LoRA";
+                addRow.textContent = T("＋ Add LoRA");
                 addRow.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 10px;align-self:flex-start;";
                 addRow.addEventListener("pointerdown", (e) => e.stopPropagation());
                 addRow.addEventListener("click", (e) => {
@@ -397,7 +409,7 @@ app.registerExtension({
             const abBtn = document.createElement("button");
             abBtn.className = "er-btn";
             abBtn.textContent = "A|B";
-            abBtn.title = "Toggle result / reference (image_1)";
+            abBtn.title = T("Toggle result / reference (image_1)");
             abBtn.style.cssText =
                 "position:absolute;top:6px;right:6px;height:22px;font-size:11px;line-height:1;padding:0 8px;opacity:.85;display:none;";
             stage.appendChild(abBtn);
@@ -477,7 +489,7 @@ app.registerExtension({
                     const linked = node.inputs?.[idx]?.link != null;
                     const chip = document.createElement("span");
                     chip.textContent = String(i);
-                    chip.title = `Reference image ${i}`;
+                    chip.title = TF("Reference image {n}", { n: i });
                     chip.style.cssText =
                         "width:14px;height:14px;border-radius:3px;display:inline-flex;" +
                         "align-items:center;justify-content:center;font-size:8px;font-weight:bold;" +
@@ -490,7 +502,7 @@ app.registerExtension({
                 if (li >= 0 && node.inputs?.[li]?.link != null) {
                     const chain = document.createElement("span");
                     chain.textContent = "⛓";
-                    chain.title = "Chained from another ER EditGen — no VAE round-trip";
+                    chain.title = T("Chained from another ER EditGen — no VAE round-trip");
                     chain.style.cssText = `color:${ER.ok};font-size:10px;margin-left:2px;`;
                     slots.appendChild(chain);
                 }
@@ -521,7 +533,7 @@ app.registerExtension({
             });
             genBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
-                info.textContent = "queued…";
+                setInfo("queued…");
                 app.queuePrompt(0, 1);
             });
 
@@ -551,7 +563,7 @@ app.registerExtension({
             const onProgress = (e) => {
                 const d = e.detail || {};
                 if (String(d.node) !== String(node.id) || !d.max) return;
-                info.textContent = `sampling ${Math.round((d.value / d.max) * 100)}%`;
+                setInfo("sampling {p}%", { p: Math.round((d.value / d.max) * 100) });
             };
             api.addEventListener("progress", onProgress);
             // preview de la progresion del sampler en el visor del nodo:
@@ -587,7 +599,28 @@ app.registerExtension({
             api.addEventListener("executing", onExecuting);
             api.addEventListener("b_preview", onBPreview);
             node._erInfo = (txt) => {
+                infoKey = null;
+                infoVars = null;
                 info.textContent = txt || "";
+            };
+
+            // ---------- idioma ----------
+            node._erRelabel = () => {
+                chainBtn.textContent = T("⛓ latent");
+                chainBtn.title = T(
+                    "Show the latent input, to chain another ER EditGen without going through the VAE"
+                );
+                loraBtn.title = T("Add one or more LoRAs, loaded internally (empty list = none)");
+                advBtn.title = T("Model, seed, steps and other settings");
+                expandBtn.title = T("Expand / shrink the prompt box");
+                genBtn.textContent = T("▶ Generate");
+                genBtn.title = T("Run this workflow");
+                abBtn.title = T("Toggle result / reference (image_1)");
+                if (promptW?.element) promptW.element.placeholder = T("Describe the edit or the image to generate...");
+                saveLoras(getLoras());
+                refreshUI();
+                if (loraPanel.style.display !== "none") rebuildLoraUI();
+                if (infoKey) setInfo(infoKey, infoVars);
             };
 
             // ---------- ciclo de vida ----------
@@ -644,10 +677,10 @@ app.registerExtension({
                 saveLoras(getLoras()); // contador del boton LoRA
                 if (!node._erConfigured) {
                     const n2 = adoptSceneModels();
-                    if (n2) info.textContent = "models adopted from this workflow";
+                    if (n2) setInfo("models adopted from this workflow");
                 }
                 if (!node.widgets.find((w) => w.name === "unet_name")?.value) {
-                    info.textContent = "open ⚙ and pick your model";
+                    setInfo("open ⚙ and pick your model");
                 }
             }, 140);
         };

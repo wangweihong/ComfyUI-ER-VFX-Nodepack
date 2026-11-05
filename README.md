@@ -18,6 +18,24 @@ Docs en español: [esperandoelrender.com](https://esperandoelrender.com)
 
 ---
 
+## Language / 语言
+
+Every node is **English / 中文 bilingual** — node titles, descriptions, panel and slider labels, tooltips and status messages. Switching languages never changes a value stored in your workflow.
+
+- **Settings → ER VFX · Language / 语言**: `Auto (ComfyUI language, browser fallback)` / `English` / `中文`.
+- **Right-click any ER node → Language / 语言**: quick toggle.
+- The choice is remembered in the browser and applied to every node already on the canvas — no ComfyUI restart.
+- Technical identifiers (model/file names, sampler names, option values such as `crop` / `pad`) stay in English on purpose, so workflows keep working across languages.
+
+所有节点均支持**中英双语**：节点标题、说明、面板与滑块标签、提示信息都会随语言切换，且不会改动工作流中保存的任何数值。
+
+- **设置 → ER VFX · Language / 语言**：自动（跟随 ComfyUI 界面语言，其次浏览器）/ English / 中文。
+- **在任意 ER 节点上单击右键 → Language / 语言**：快速切换。
+- 选择会记忆在浏览器中，并即时应用到画布上已有的所有节点，无需重启 ComfyUI。
+- 技术标识（模型/文件名、采样器名、`crop` / `pad` 等选项值）保持英文，以保证工作流在不同语言下取值一致。
+
+---
+
 ## Install
 
 **ComfyUI Manager (recommended)** — open Manager → *Custom Nodes Manager* → search **"ER VFX Nodepack"** → Install → restart ComfyUI.
@@ -26,7 +44,7 @@ Docs en español: [esperandoelrender.com](https://esperandoelrender.com)
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/esperandoelrender/ComfyUI-ER-VFX-Nodepack.git
+git clone https://github.com/wangweihong/ComfyUI-ER-VFX-Nodepack.git
 ```
 
 Restart ComfyUI. All nodes appear under the `image/adjust`, `image/generation`, `image/transform`, `utils` and `preview` categories — search for **"ER"** in the node menu.
@@ -178,7 +196,7 @@ Real-time **A/B wipe** between two videos (frame batches): drag the wipe line, p
 ComfyUI-ER-VFX-Nodepack/
 ├── __init__.py          # aggregator: collects NODE_CLASS_MAPPINGS from every er_* sub-package
 ├── pyproject.toml       # Comfy Registry metadata
-├── web/                 # shared front-end (er_theme.js, logo.png, one .js per pack)
+├── web/                 # shared front-end (er_theme.js, er_i18n.js, logo.png, one .js per pack)
 └── er_*/                # one folder per pack: __init__.py (nodes) + README.md (docs)
 ```
 

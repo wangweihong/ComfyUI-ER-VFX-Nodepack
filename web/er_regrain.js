@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, TF, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme();
 
@@ -157,6 +158,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
             if (!logo.complete || !logo.naturalWidth) return;
@@ -214,7 +216,7 @@ app.registerExtension({
             const abBtn = document.createElement("button");
             abBtn.className = "er-btn";
             abBtn.textContent = "A|B";
-            abBtn.title = "Toggle before/after";
+            abBtn.title = T("Toggle before/after");
             abBtn.style.cssText =
                 "position:absolute;top:6px;right:6px;height:22px;font-size:11px;line-height:1;padding:0 8px;opacity:.85;";
             stage.appendChild(abBtn);
@@ -243,25 +245,26 @@ app.registerExtension({
                 const fold = document.createElement("button");
                 fold.className = "er-btn";
                 fold.textContent = open ? "▾" : "▸";
-                fold.title = "Expand/collapse";
+                fold.title = T("Expand/collapse");
                 fold.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 6px;";
                 const title = document.createElement("span");
                 title.className = "er-title";
-                title.textContent = "Grain";
+                title.textContent = T("Grain");
                 // preset de stock filmico
                 const sel = document.createElement("select");
                 sel.className = "er-select";
                 sel.style.cssText = "font-size:10px;padding:1px 5px;flex:1;max-width:190px;";
                 for (const name of ["custom", ...Object.keys(FILM_PRESETS)]) {
                     const o = document.createElement("option");
-                    o.value = o.textContent = name;
+                    o.value = name;
+                    o.textContent = T(name);
                     sel.appendChild(o);
                 }
                 sel.value = p.film_preset;
                 const greset = document.createElement("button");
                 greset.className = "er-btn";
                 greset.textContent = "⟲";
-                greset.title = "Reset all grain parameters";
+                greset.title = T("Reset all grain parameters");
                 greset.style.cssText = "height:20px;font-size:11px;line-height:1;padding:0 7px;";
                 head.append(fold, title, sel, greset);
                 const body = document.createElement("div");
@@ -273,7 +276,7 @@ app.registerExtension({
                     wrap.style.cssText = "display:flex;align-items:center;gap:4px;" + (overridden ? "opacity:.35;" : "");
                     const tag = document.createElement("span");
                     tag.className = "er-dim";
-                    tag.textContent = label;
+                    tag.textContent = T(label, "regrain");
                     tag.style.cssText = "font-size:9px;width:60px;flex:0 0 auto;user-select:none;";
                     const inp = document.createElement("input");
                     inp.type = "range";
@@ -283,7 +286,9 @@ app.registerExtension({
                     inp.step = String(step);
                     inp.value = String(p[key]);
                     inp.disabled = overridden;
-                    inp.title = overridden ? "Controlled by the film preset" : label + " (double click: reset)";
+                    inp.title = overridden
+                        ? T("Controlled by the film preset")
+                        : TF("{label} (double click: reset)", { label: T(label, "regrain") });
                     inp.style.cssText = "flex:1;height:12px;cursor:pointer;min-width:30px;";
                     const num = document.createElement("input");
                     num.type = "number";
@@ -297,7 +302,7 @@ app.registerExtension({
                     const rst = document.createElement("button");
                     rst.className = "er-btn";
                     rst.textContent = "⟲";
-                    rst.title = "Reset " + label;
+                    rst.title = TF("Reset {label}", { label: T(label, "regrain") });
                     rst.disabled = overridden;
                     rst.style.cssText = "height:16px;font-size:9px;line-height:1;padding:0 4px;flex:0 0 auto;";
                     const push = (v, syncNum, syncRange) => {
@@ -330,7 +335,7 @@ app.registerExtension({
                 seedWrap.style.cssText = "display:flex;align-items:center;gap:4px;";
                 const seedTag = document.createElement("span");
                 seedTag.className = "er-dim";
-                seedTag.textContent = "Seed";
+                seedTag.textContent = T("Seed");
                 seedTag.style.cssText = "font-size:9px;width:60px;flex:0 0 auto;user-select:none;";
                 const seedInp = document.createElement("input");
                 seedInp.type = "number";
@@ -374,6 +379,12 @@ app.registerExtension({
                 });
             };
             rebuildUI();
+
+            // language switch: retranslate the static labels and rebuild panels
+            node._erRelabel = () => {
+                abBtn.title = T("Toggle before/after");
+                rebuildUI();
+            };
 
             // migracion desde el formato antiguo (widgets sueltos)
             const onConfigureG = node.onConfigure;

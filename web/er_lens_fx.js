@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, TF, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme();
 
@@ -607,6 +608,7 @@ app.registerExtension({
     async beforeRegisterNodeDef(nodeType, nodeData) {
         const def = NODE_DEFS[nodeData.name];
         if (!def) return;
+        erLocalizeNodeDef(nodeData, nodeData.name);
 
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
             if (!logo.complete || !logo.naturalWidth) return;
@@ -700,7 +702,7 @@ app.registerExtension({
                 // ojo global: abre/cierra los tiradores del visor
                 const eyeBtn = document.createElement("button");
                 eyeBtn.className = "er-btn";
-                eyeBtn.title = "Show/hide the light markers";
+                eyeBtn.title = T("Show/hide the light markers");
                 eyeBtn.style.cssText =
                     "position:absolute;top:6px;right:6px;height:22px;font-size:12px;line-height:1;padding:0 8px;opacity:.85;";
                 const applyMarkerVis = () => {
@@ -721,14 +723,14 @@ app.registerExtension({
                 const bar = document.createElement("div");
                 bar.style.cssText = "display:flex;align-items:center;gap:6px;flex:0 0 auto;";
                 const addBtn = document.createElement("button");
-                addBtn.textContent = "＋ Flare";
+                addBtn.textContent = T("＋ Flare");
                 addBtn.className = "er-btn-primary";
                 addBtn.style.cssText = "height:22px;font-size:11px;line-height:1;padding:0 12px;";
-                addBtn.title = `Add a lens flare (max ${MAX_FLARES})`;
+                addBtn.title = TF("Add a lens flare (max {max})", { max: MAX_FLARES });
                 const resetAllBtn = document.createElement("button");
-                resetAllBtn.textContent = "⟲ All";
+                resetAllBtn.textContent = T("⟲ All");
                 resetAllBtn.className = "er-btn";
-                resetAllBtn.title = "Reset every flare's parameters (keeps positions)";
+                resetAllBtn.title = T("Reset every flare's parameters (keeps positions)");
                 resetAllBtn.style.cssText = "height:22px;font-size:11px;line-height:1;padding:0 10px;";
                 resetAllBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
                 resetAllBtn.addEventListener("click", (e) => {
@@ -852,7 +854,7 @@ app.registerExtension({
                         // tirador del angulo del ghost: orbita el marcador y
                         // apunta por donde cae el reguero de reflejos
                         const rh = document.createElement("div");
-                        rh.title = `Aim Flare ${i + 1}'s ghost trail (0 = natural light-to-center axis)`;
+                        rh.title = TF("Aim Flare {n}'s ghost trail (0 = natural light-to-center axis)", { n: i + 1 });
                         rh.style.cssText =
                             "position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;" +
                             `background:${tint};border:1px solid #000;transform:rotate(45deg);` +
@@ -897,30 +899,31 @@ app.registerExtension({
                         const fold = document.createElement("button");
                         fold.className = "er-btn";
                         fold.textContent = f.open ? "▾" : "▸";
-                        fold.title = "Expand/collapse";
+                        fold.title = T("Expand/collapse");
                         fold.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 6px;";
                         const title = document.createElement("span");
                         title.className = "er-title";
-                        title.textContent = `Flare ${i + 1}`;
+                        title.textContent = TF("Flare {n}", { n: i + 1 });
                         title.style.opacity = f.on ? "1" : "0.45";
                         const eye = document.createElement("button");
                         eye.className = "er-btn";
                         eye.textContent = f.on ? "👁" : "🙈";
-                        eye.title = "Enable/disable this flare";
+                        eye.title = T("Enable/disable this flare");
                         eye.style.cssText = "height:20px;font-size:11px;line-height:1;padding:0 7px;";
                         const freset = document.createElement("button");
                         freset.className = "er-btn";
                         freset.textContent = "⟲";
-                        freset.title = "Reset this flare (keeps its position)";
+                        freset.title = T("Reset this flare (keeps its position)");
                         freset.style.cssText = "height:20px;font-size:11px;line-height:1;padding:0 7px;";
                         // preset de look (rellena valores, posicion intacta)
                         const presetSel = document.createElement("select");
                         presetSel.className = "er-select";
-                        presetSel.title = "Flare look preset — fills the values, everything stays editable";
+                        presetSel.title = T("Flare look preset — fills the values, everything stays editable");
                         presetSel.style.cssText = "font-size:9px;padding:1px 4px;max-width:118px;flex:0 1 auto;";
                         for (const name of ["custom", ...Object.keys(FLARE_PRESETS)]) {
                             const o = document.createElement("option");
-                            o.value = o.textContent = name;
+                            o.value = name;
+                            o.textContent = T(name);
                             presetSel.appendChild(o);
                         }
                         presetSel.value = f._preset && FLARE_PRESETS[f._preset] ? f._preset : "custom";
@@ -945,14 +948,14 @@ app.registerExtension({
                         dup.className = "er-btn";
                         dup.textContent = "⧉";
                         dup.title = list.length >= MAX_FLARES
-                            ? `Duplicate this flare (max ${MAX_FLARES} reached)`
-                            : "Duplicate this flare (same settings, nudged position)";
+                            ? TF("Duplicate this flare (max {max} reached)", { max: MAX_FLARES })
+                            : T("Duplicate this flare (same settings, nudged position)");
                         dup.style.cssText = "height:20px;font-size:11px;line-height:1;padding:0 7px;" +
                             (list.length >= MAX_FLARES ? "opacity:.35;" : "");
                         const del = document.createElement("button");
                         del.className = "er-btn";
                         del.textContent = "✕";
-                        del.title = "Delete this flare";
+                        del.title = T("Delete this flare");
                         del.style.cssText = `height:20px;font-size:10px;line-height:1;padding:0 7px;color:${ER.error};`;
                         head.append(fold, title, presetSel, eye, dup, freset, del);
                         const body = document.createElement("div");
@@ -963,7 +966,7 @@ app.registerExtension({
                             wrap.style.cssText = "display:flex;align-items:center;gap:4px;";
                             const tag = document.createElement("span");
                             tag.className = "er-dim";
-                            tag.textContent = label;
+                            tag.textContent = T(label);
                             tag.style.cssText = "font-size:9px;width:56px;flex:0 0 auto;user-select:none;";
                             const inp = document.createElement("input");
                             inp.type = "range";
@@ -972,7 +975,7 @@ app.registerExtension({
                             inp.max = String(max);
                             inp.step = String(step);
                             inp.value = String(f[key]);
-                            inp.title = label + " (double click: reset)";
+                            inp.title = TF("{label} (double click: reset)", { label: T(label) });
                             inp.style.cssText = "flex:1;height:12px;cursor:pointer;min-width:30px;";
                             const num = document.createElement("input");
                             num.type = "number";
@@ -986,7 +989,7 @@ app.registerExtension({
                             const rst = document.createElement("button");
                             rst.className = "er-btn";
                             rst.textContent = "⟲";
-                            rst.title = "Reset " + label;
+                            rst.title = TF("Reset {label}", { label: T(label) });
                             rst.style.cssText = "height:16px;font-size:9px;line-height:1;padding:0 4px;flex:0 0 auto;";
                             const push = (v, syncNum, syncRange) => {
                                 const val = Math.min(max, Math.max(min, Number(v)));
@@ -1086,6 +1089,16 @@ app.registerExtension({
                     applyMarkerVis();
                 };
 
+                // language switch: retranslate the bar and rebuild the panels
+                node._erRelabelFlare = () => {
+                    eyeBtn.title = T("Show/hide the light markers");
+                    addBtn.textContent = T("＋ Flare");
+                    addBtn.title = TF("Add a lens flare (max {max})", { max: MAX_FLARES });
+                    resetAllBtn.textContent = T("⟲ All");
+                    resetAllBtn.title = T("Reset every flare's parameters (keeps positions)");
+                    rebuildUI();
+                };
+
                 // migracion desde el formato antiguo (widgets sueltos) + estado
                 const onConfigure = node.onConfigure;
                 node.onConfigure = function (info) {
@@ -1123,7 +1136,7 @@ app.registerExtension({
             const abBtn = document.createElement("button");
             abBtn.className = "er-btn";
             abBtn.textContent = "A|B";
-            abBtn.title = "Toggle before/after";
+            abBtn.title = T("Toggle before/after");
             abBtn.style.cssText =
                 `position:absolute;top:6px;right:${def.flare ? "44" : "6"}px;` +
                 "height:22px;font-size:11px;line-height:1;padding:0 8px;opacity:.85;";
@@ -1134,6 +1147,13 @@ app.registerExtension({
                 abOn = !abOn;
                 abBtn.classList.toggle("er-active", abOn);
             });
+
+            // language switch: retranslate everything without touching values
+            node._erRelabel = () => {
+                abBtn.title = T("Toggle before/after");
+                node._erRelabelFlare?.();
+                node._erRelabelLens?.();
+            };
 
             // ---------- UI de paneles del lens effects ----------
             if (def.lens) {
@@ -1148,22 +1168,28 @@ app.registerExtension({
                     lensBar.style.cssText = "display:flex;align-items:center;gap:6px;flex:0 0 auto;";
                     const lensTag = document.createElement("span");
                     lensTag.className = "er-title";
-                    lensTag.textContent = "Lens";
+                    lensTag.textContent = T("Lens");
                     lensSel = document.createElement("select");
                     lensSel.className = "er-select";
                     lensSel.style.cssText = "flex:1;font-size:10px;padding:2px 5px;max-width:220px;";
                     for (const name of ["custom", ...Object.keys(def.presets)]) {
                         const o = document.createElement("option");
-                        o.value = o.textContent = name;
+                        o.value = name;
+                        o.textContent = T(name);
                         lensSel.appendChild(o);
                     }
                     const applyBadge = document.createElement("span");
                     applyBadge.className = "er-dim";
                     applyBadge.style.cssText = "font-size:9px;";
-                    applyBadge.textContent = "presets fill values — everything stays editable";
+                    applyBadge.textContent = T("presets fill values — everything stays editable");
                     lensBar.append(lensTag, lensSel, applyBadge);
                     root.appendChild(lensBar);
                     stopEv(lensSel);
+                    node._erRelabelLensBar = () => {
+                        lensTag.textContent = T("Lens");
+                        applyBadge.textContent = T("presets fill values — everything stays editable");
+                        for (const o of lensSel.options) o.textContent = T(o.value);
+                    };
                 }
 
                 const groupsBox = document.createElement("div");
@@ -1183,16 +1209,16 @@ app.registerExtension({
                         const fold = document.createElement("button");
                         fold.className = "er-btn";
                         fold.textContent = open ? "▾" : "▸";
-                        fold.title = "Expand/collapse";
+                        fold.title = T("Expand/collapse");
                         fold.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 6px;";
                         const title = document.createElement("span");
                         title.className = "er-title";
-                        title.textContent = gtitle;
+                        title.textContent = T(gtitle);
                         title.style.cssText = "flex:1;";
                         const greset = document.createElement("button");
                         greset.className = "er-btn";
                         greset.textContent = "⟲";
-                        greset.title = "Reset this group";
+                        greset.title = T("Reset this group");
                         greset.style.cssText = "height:20px;font-size:11px;line-height:1;padding:0 7px;";
                         head.append(fold, title, greset);
                         const body = document.createElement("div");
@@ -1203,7 +1229,7 @@ app.registerExtension({
                             wrap.style.cssText = "display:flex;align-items:center;gap:4px;";
                             const tag = document.createElement("span");
                             tag.className = "er-dim";
-                            tag.textContent = label;
+                            tag.textContent = T(label);
                             tag.style.cssText = "font-size:9px;width:60px;flex:0 0 auto;user-select:none;";
                             const inp = document.createElement("input");
                             inp.type = "range";
@@ -1212,7 +1238,7 @@ app.registerExtension({
                             inp.max = String(max);
                             inp.step = String(step);
                             inp.value = String(p[key]);
-                            inp.title = label + " (double click: reset)";
+                            inp.title = TF("{label} (double click: reset)", { label: T(label) });
                             inp.style.cssText = "flex:1;height:12px;cursor:pointer;min-width:30px;";
                             const num = document.createElement("input");
                             num.type = "number";
@@ -1226,7 +1252,7 @@ app.registerExtension({
                             const rst = document.createElement("button");
                             rst.className = "er-btn";
                             rst.textContent = "⟲";
-                            rst.title = "Reset " + label;
+                            rst.title = TF("Reset {label}", { label: T(label) });
                             rst.style.cssText = "height:16px;font-size:9px;line-height:1;padding:0 4px;flex:0 0 auto;";
                             const push = (v, syncNum, syncRange) => {
                                 const val = Math.min(max, Math.max(min, Number(v)));
@@ -1281,8 +1307,8 @@ app.registerExtension({
                     allBar.style.cssText = "display:flex;justify-content:flex-end;";
                     const allBtn = document.createElement("button");
                     allBtn.className = "er-btn";
-                    allBtn.textContent = "⟲ Reset all";
-                    allBtn.title = "Reset every parameter to its default";
+                    allBtn.textContent = T("⟲ Reset all");
+                    allBtn.title = T("Reset every parameter to its default");
                     allBtn.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 10px;";
                     stopEv(allBtn);
                     allBtn.addEventListener("click", (e) => {
@@ -1310,6 +1336,12 @@ app.registerExtension({
                     rebuildLensUI();
                 });
                 rebuildLensUI();
+
+                // language switch: retranslate the preset bar and rebuild panels
+                node._erRelabelLens = () => {
+                    node._erRelabelLensBar?.();
+                    rebuildLensUI();
+                };
 
                 // migracion desde el formato antiguo (widgets sueltos)
                 const onConfigureL = node.onConfigure;

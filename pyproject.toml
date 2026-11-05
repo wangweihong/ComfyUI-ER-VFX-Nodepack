@@ -6,9 +6,9 @@ license = { text = "MIT" }
 dependencies = []
 
 [project.urls]
-Repository = "https://github.com/esperandoelrender/ComfyUI-ER-VFX-Nodepack"
+Repository = "https://github.com/wangweihong/ComfyUI-ER-VFX-Nodepack"
 
 [tool.comfy]
 PublisherId = "eracademy"
 DisplayName = "ER VFX Nodepack"
-Icon = "https://raw.githubusercontent.com/esperandoelrender/ComfyUI-ER-VFX-Nodepack/main/web/logo.png"
+Icon = "https://raw.githubusercontent.com/wangweihong/ComfyUI-ER-VFX-Nodepack/main/web/logo.png"

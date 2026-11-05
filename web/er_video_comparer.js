@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme();
 
@@ -34,6 +35,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         // dibuja el logo en la barra de título en lugar del punto estándar
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
@@ -116,8 +118,8 @@ app.registerExtension({
                     `font-size:11px;font-family:${ER.font};pointer-events:none;`;
                 return el;
             };
-            const labelA = mkLabel("A · generated", "left");
-            const labelB = mkLabel("B · reference", "right");
+            const labelA = mkLabel(T("A · generated"), "left");
+            const labelB = mkLabel(T("B · reference"), "right");
 
             stage.append(videoB, videoA, divider, labelA, labelB);
 
@@ -294,6 +296,12 @@ app.registerExtension({
                 if (rafId === null) rafId = requestAnimationFrame(syncLoop);
                 node.setSize([node.size[0], Math.max(node.size[1], node.computeSize()[1])]);
                 app.graph.setDirtyCanvas(true, true);
+            };
+
+            // language switch: retranslate the A/B labels
+            node._erRelabel = () => {
+                labelA.textContent = T("A · generated");
+                labelB.textContent = T("B · reference");
             };
 
             const onRemoved = node.onRemoved;

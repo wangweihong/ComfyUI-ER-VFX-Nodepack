@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, TF, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme(); // inyecta la hoja de estilos ER una sola vez
 
@@ -19,7 +20,7 @@ const toast = (severity, detail) => {
     try {
         app.extensionManager.toast.add({
             severity,
-            summary: "ER Video Color Correct",
+            summary: T("ER Video Color Correct"),
             detail,
             life: 5000,
         });
@@ -200,6 +201,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         // logo en la barra de título
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
@@ -299,16 +301,20 @@ app.registerExtension({
             wheelsRow.style.cssText =
                 "display:none;justify-content:space-evenly;align-items:flex-start;gap:6px;flex:0 0 auto;";
             const drawWheelFns = [];
+            const wheelCanvases = [];
+            const wheelTagEls = [];
             WHEELS.forEach((label, wi) => {
                 const col = document.createElement("div");
                 col.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:3px;";
                 const wheel = document.createElement("canvas");
                 wheel.width = WHEEL_SIZE;
                 wheel.height = WHEEL_SIZE;
-                wheel.title = `${label}: drag to tint, double click to reset`;
+                wheel.title = TF("{label}: drag to tint, double click to reset", { label: T(label) });
                 wheel.style.cssText = `width:${WHEEL_SIZE}px;height:${WHEEL_SIZE}px;display:block;cursor:crosshair;`;
+                wheelCanvases.push(wheel);
                 const tag = document.createElement("div");
-                tag.textContent = label;
+                tag.textContent = T(label);
+                wheelTagEls.push(tag);
                 tag.className = "er-title"; // etiqueta con estilo de titulo ER
                 tag.style.cssText = "font-size:10px;user-select:none;";
                 col.append(wheel, tag);
@@ -402,8 +408,8 @@ app.registerExtension({
                     "cursor:pointer;font-size:10px;line-height:1;padding:0 10px;";
                 return b;
             };
-            const resetBtn = mkBtn("Reset", "Reset all parameters and wheels");
-            const origBtn = mkBtn("👁 Original", "Hold to see the original video");
+            const resetBtn = mkBtn(T("Reset"), T("Reset all parameters and wheels"));
+            const origBtn = mkBtn(T("👁 Original"), T("Hold to see the original video"));
             controls.append(resetBtn, origBtn);
 
             root.append(stage, playback, wheelsRow, controls);
@@ -556,7 +562,7 @@ app.registerExtension({
                 glCanvas.height = video.videoHeight;
                 if (!glCtx) {
                     glCtx = initGL(glCanvas);
-                    if (!glCtx) toast("error", "WebGL is not available; the live preview cannot run.");
+                    if (!glCtx) toast("error", T("WebGL is not available; the live preview cannot run."));
                 }
                 stage.style.display = "block";
                 playback.style.display = "flex";
@@ -617,6 +623,20 @@ app.registerExtension({
             node.onConfigure = function () {
                 onConfigure?.apply(this, arguments);
                 drawAllWheels();
+            };
+
+            // language switch: retranslate the wheel labels and the buttons
+            node._erRelabel = () => {
+                WHEELS.forEach((label, i) => {
+                    if (wheelTagEls[i]) wheelTagEls[i].textContent = T(label);
+                    if (wheelCanvases[i]) {
+                        wheelCanvases[i].title = TF("{label}: drag to tint, double click to reset", { label: T(label) });
+                    }
+                });
+                resetBtn.textContent = T("Reset");
+                resetBtn.title = T("Reset all parameters and wheels");
+                origBtn.textContent = T("👁 Original");
+                origBtn.title = T("Hold to see the original video");
             };
 
             const onRemoved = node.onRemoved;

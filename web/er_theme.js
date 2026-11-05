@@ -3,6 +3,7 @@
 // Palette matches the ER Academy branding: cyan + white over dark charcoal.
 
 import { app } from "../../scripts/app.js";
+import { erLocalizeWidgets, erAppendLanguageMenu, erRetitleNode } from "./er_i18n.js";
 
 export const ER = {
     accent: "#5ce1e6",       // ER cyan
@@ -210,6 +211,17 @@ function erMinFit(node) {
 export function erBrandNode(node) {
     if (node.__erBranded) return;
     node.__erBranded = true;
+    // bilingual UI: widget labels in the selected language + a language entry
+    // in the node's right-click menu (the ComfyUI setting does the same)
+    try {
+        erLocalizeWidgets(node);
+    } catch (e) {}
+    const protoMenu = Object.getPrototypeOf(node).getExtraMenuOptions;
+    node.getExtraMenuOptions = function (canvas, options) {
+        const ret = protoMenu?.apply(this, arguments);
+        erAppendLanguageMenu(options);
+        return ret;
+    };
     if (!node.color || node.color === LiteGraph.NODE_DEFAULT_COLOR) node.color = ER.accentDark;
     if (!node.bgcolor || node.bgcolor === LiteGraph.NODE_DEFAULT_BGCOLOR) node.bgcolor = ER.bgNode;
     // encadena el ajuste de altura minima al redibujado del nodo, sin pisar
@@ -224,6 +236,11 @@ export function erBrandNode(node) {
     const protoConf = Object.getPrototypeOf(node).onConfigure;
     node.onConfigure = function () {
         this.__erRepair = true;
-        if (protoConf) return protoConf.apply(this, arguments);
+        const ret = protoConf ? protoConf.apply(this, arguments) : undefined;
+        // a workflow saved in the other language stores its title: restore the
+        // automatic title of the current language (hand-renamed nodes are kept)
+        erRetitleNode(this);
+        setTimeout(() => erRetitleNode(this), 0);
+        return ret;
     };
 }

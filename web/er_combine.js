@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme();
 
@@ -37,6 +38,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
             if (!logo.complete || !logo.naturalWidth) return;
@@ -126,7 +128,7 @@ app.registerExtension({
                     for (const m of MODES) {
                         const o = document.createElement("option");
                         o.value = m;
-                        o.textContent = m;
+                        o.textContent = T(m);
                         sel.appendChild(o);
                     }
                     sel.value = list[i - 1].mode;
@@ -164,7 +166,7 @@ app.registerExtension({
                     const empty = document.createElement("span");
                     empty.className = "er-dim";
                     empty.style.cssText = "font-size:10px;";
-                    empty.textContent = "Connect layers to stack them over the base.";
+                    empty.textContent = T("Connect layers to stack them over the base.");
                     panel.appendChild(empty);
                     rowCount = 1;
                 }
@@ -181,7 +183,7 @@ app.registerExtension({
             const abBtn = document.createElement("button");
             abBtn.className = "er-btn";
             abBtn.textContent = "A|B";
-            abBtn.title = "Toggle composite / base";
+            abBtn.title = T("Toggle composite / base");
             abBtn.style.cssText =
                 "position:absolute;top:6px;right:6px;height:22px;font-size:11px;line-height:1;padding:0 8px;opacity:.85;";
             abBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
@@ -333,6 +335,12 @@ app.registerExtension({
                     fitNode();
                 }, 300);
             };
+            // language switch: retranslate the static labels and rebuild rows
+            node._erRelabel = () => {
+                abBtn.title = T("Toggle composite / base");
+                rebuildRows();
+            };
+
             setTimeout(() => {
                 syncLayerInputs();
                 rebuildRows();

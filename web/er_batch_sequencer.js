@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, TF, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme();
 
@@ -82,7 +83,7 @@ function mkMedia(entry) {
     // aspecto nativo: la altura exacta la asigna autoLayoutGrid en pixeles
     media.style.cssText =
         `width:100%;height:auto;display:block;object-fit:contain;cursor:zoom-in;background:${ER.inset};`;
-    media.title = "click: open full size";
+    media.title = T("click: open full size");
     media.addEventListener("pointerdown", (e) => e.stopPropagation());
     media.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -254,7 +255,7 @@ async function buildContactSheet(entries, title, subtitle) {
     ctx.fillStyle = ER.accent;
     ctx.font = "700 22px 'Trebuchet MS', 'Segoe UI', sans-serif";
     ctx.textBaseline = "middle";
-    ctx.fillText(title || "ER WEDGES", PAD, HEADER / 2 + 3, canvas.width * 0.62);
+    ctx.fillText(title || T("ER WEDGES"), PAD, HEADER / 2 + 3, canvas.width * 0.62);
     ctx.fillStyle = ER.textDim;
     ctx.font = "13px 'Trebuchet MS', 'Segoe UI', sans-serif";
     ctx.textAlign = "right";
@@ -310,7 +311,7 @@ function downloadSheet(canvas, title) {
 async function exportSheet(entries, title, dir) {
     if (!entries.length) return null;
     const d = new Date();
-    const subtitle = `ER Tools · ${entries.length} results · ${d.toLocaleDateString()}`;
+    const subtitle = TF("ER Tools · {n} results · {date}", { n: entries.length, date: d.toLocaleDateString() });
     const allVideo = entries.every((e) => (e.kind || "image") === "video");
     if (allVideo) {
         try {
@@ -318,7 +319,7 @@ async function exportSheet(entries, title, dir) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    dir, title, subtitle,
+                    dir, title: title || T("ER WEDGES"), subtitle,
                     filename: sheetFilename(title, "mp4"),
                     // usa la version HD si el run la genero (resolucion 1080p)
                     items: entries.map((e) => ({ ...e.item, filename: e.item.hd || e.item.filename, label: e.label })),
@@ -362,6 +363,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (!SEQ_TYPES.has(nodeData.name) && !(nodeData.name in PREVIEW_KINDS)) return;
+        erLocalizeNodeDef(nodeData, nodeData.name);
 
         // logo en la barra de título
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
@@ -383,7 +385,7 @@ app.registerExtension({
             getExtraMenuOptions?.apply(this, arguments);
             options.unshift(
                 {
-                    content: "🖼 Save contact sheet (all results)",
+                    content: T("🖼 Save contact sheet (all results)"),
                     callback: () => this.erExportSheet?.(),
                 },
                 null
@@ -434,12 +436,23 @@ app.registerExtension({
 
             const topBar = document.createElement("div");
             topBar.style.cssText = "display:flex;align-items:center;gap:6px;flex-wrap:wrap;";
-            const addBatchBtn = mkBtn("＋ Wedge", "Add a wedge: one run (or several) with its own parameter values");
-            const runBtn = mkBtn("▶ Run wedges", "Run every wedge in order");
+            const addBatchBtn = mkBtn(
+                T("＋ Wedge"),
+                T("Add a wedge: one run (or several) with its own parameter values")
+            );
+            const runBtn = mkBtn(T("▶ Run wedges"), T("Run every wedge in order"));
             runBtn.className = "er-btn-primary"; // accion principal en cian
-            const clearBtn = mkBtn("🗑", "Clear results");
+            const clearBtn = mkBtn("🗑", T("Clear results"));
             const status = document.createElement("span");
             status.style.cssText = `color:${ER.textDim};`;
+            // status line: keep the key so it can be retranslated live
+            let statusKey = null;
+            let statusVars = null;
+            const setStatus = (key, vars) => {
+                statusKey = key || null;
+                statusVars = vars || null;
+                status.textContent = statusKey ? TF(statusKey, statusVars) : "";
+            };
             topBar.append(addBatchBtn, runBtn, clearBtn, status);
 
             const batchesBox = document.createElement("div");
@@ -558,11 +571,11 @@ app.registerExtension({
                 widgetSel.style.cssText = nodeSel.style.cssText;
                 const values = document.createElement("input");
                 values.type = "text";
-                values.placeholder = "values  |  7,7.5,8  |  rand3";
+                values.placeholder = T("values  |  7,7.5,8  |  rand3");
                 values.value = row.expr;
                 values.className = "er-input";
                 values.style.cssText = "flex:1;font-size:10px;padding:2px 5px;min-width:50px;";
-                const del = mkBtn("✕", "Remove this parameter");
+                const del = mkBtn("✕", T("Remove this parameter"));
                 del.classList.add("er-bs-danger");
                 del.style.height = "20px";
 
@@ -581,9 +594,9 @@ app.registerExtension({
                         }
                         nodeSel.appendChild(og);
                     };
-                    addGroup("★ samplers (upstream)", g.samplers);
-                    addGroup("upstream", g.upstream);
-                    addGroup("other nodes", g.others);
+                    addGroup(T("★ samplers (upstream)"), g.samplers);
+                    addGroup(T("upstream"), g.upstream);
+                    addGroup(T("other nodes"), g.others);
                     if (row.nodeId != null && [...nodeSel.options].some((o) => o.value === String(row.nodeId))) {
                         nodeSel.value = String(row.nodeId);
                     } else if (g.samplers.length) {
@@ -639,7 +652,8 @@ app.registerExtension({
 
                 line.append(nodeSel, widgetSel, values, del);
                 batch.els.paramsBox.appendChild(line);
-                row.els = { line };
+                row.els = { line, values, del };
+                row.refill = fillNodes; // used when the language changes
                 batch.params.push(row);
                 resize();
                 return row;
@@ -647,7 +661,9 @@ app.registerExtension({
 
             // ---------- wedges ----------
             const renumber = () => {
-                batches.forEach((b, i) => (b.els.title.textContent = `Wedge ${i + 1}`));
+                batches.forEach((b, i) => {
+                    b.els.title.textContent = TF("Wedge {n}", { n: i + 1 });
+                });
             };
 
             const addBatch = (saved) => {
@@ -659,11 +675,11 @@ app.registerExtension({
                 head.style.cssText = "display:flex;align-items:center;gap:6px;";
                 const title = document.createElement("span");
                 title.className = "er-title";
-                const addP = mkBtn("＋ param", "Add a parameter to this wedge");
+                const addP = mkBtn(T("＋ param"), T("Add a parameter to this wedge"));
                 addP.style.height = "20px";
-                const dup = mkBtn("⧉", "Duplicate this wedge");
+                const dup = mkBtn("⧉", T("Duplicate this wedge"));
                 dup.style.height = "20px";
-                const delB = mkBtn("✕", "Remove this wedge");
+                const delB = mkBtn("✕", T("Remove this wedge"));
                 delB.classList.add("er-bs-danger");
                 delB.style.height = "20px";
                 head.append(title, addP, dup, delB);
@@ -671,7 +687,7 @@ app.registerExtension({
                 paramsBox.style.cssText = "display:flex;flex-direction:column;gap:4px;";
                 box.append(head, paramsBox);
                 batchesBox.appendChild(box);
-                batch.els = { box, title, paramsBox };
+                batch.els = { box, title, paramsBox, addP, dup, delB };
                 batches.push(batch);
                 renumber();
 
@@ -750,18 +766,18 @@ app.registerExtension({
                 });
                 if (!runs.length) {
                     status.style.color = ER.error; // semantico: aviso en rojo
-                    status.textContent = "add at least one wedge with a param and values";
+                    setStatus("add at least one wedge with a param and values");
                     return;
                 }
                 if (runs.length > MAX_RUNS) {
                     status.style.color = ER.error;
-                    status.textContent = `too many runs (${runs.length}), max ${MAX_RUNS}`;
+                    setStatus("too many runs ({n}), max {max}", { n: runs.length, max: MAX_RUNS });
                     return;
                 }
                 // limpia los resultados del run anterior para no acumular
                 clearResults();
                 running = true;
-                runBtn.textContent = "⏳ queueing...";
+                runBtn.textContent = T("⏳ queueing...");
                 status.style.color = ER.accent; // progreso en cian mientras corre
                 const originals = new Map(); // "id::widget" -> valor original
                 try {
@@ -777,7 +793,7 @@ app.registerExtension({
                         pendingRuns.push({ batchIdx: runs[i].batchIdx, params });
                         if (metaW) metaW.value = JSON.stringify({ batchIdx: runs[i].batchIdx, params });
                         await app.queuePrompt(0, 1);
-                        status.textContent = `queued ${i + 1}/${runs.length}`;
+                        setStatus("queued {i}/{n}", { i: i + 1, n: runs.length });
                     }
                 } finally {
                     for (const o of originals.values()) {
@@ -786,7 +802,7 @@ app.registerExtension({
                     }
                     if (metaW) metaW.value = "";
                     running = false;
-                    runBtn.textContent = "▶ Run wedges";
+                    runBtn.textContent = T("▶ Run wedges");
                 }
             };
             runBtn.addEventListener("click", (e) => {
@@ -798,7 +814,7 @@ app.registerExtension({
                 e.stopPropagation();
                 clearResults();
                 status.style.color = ER.textDim;
-                status.textContent = "";
+                setStatus(null);
                 resize();
             });
 
@@ -823,7 +839,7 @@ app.registerExtension({
                 run = run || pending;
                 const label = run
                     ? `W${run.batchIdx + 1} · ` + run.params.map((p) => `${p.label}: ${p.value}`).join(" · ")
-                    : "(manual run)";
+                    : T("(manual run)");
                 const entry = {
                     // hd: version 1080p que solo se usa al exportar el sheet
                     item: { filename: item.filename, hd: item.hd || "", subfolder: item.subfolder || "", type: item.type || "temp" },
@@ -837,9 +853,11 @@ app.registerExtension({
                 renderResult(entry);
                 // cian mientras quedan runs; al terminar vuelve al gris por defecto
                 status.style.color = pendingRuns.length ? ER.accent : ER.textDim;
-                status.textContent = pendingRuns.length
-                    ? `results: ${results.length} · waiting: ${pendingRuns.length}`
-                    : `results: ${results.length}`;
+                if (pendingRuns.length) {
+                    setStatus("results: {n} · waiting: {m}", { n: results.length, m: pendingRuns.length });
+                } else {
+                    setStatus("results: {n}", { n: results.length });
+                }
             };
 
             // exportacion de contact sheet (menu de click derecho):
@@ -849,9 +867,9 @@ app.registerExtension({
                 new Promise((res) => {
                     const prevTitle = node.properties.er_title || "";
                     if (app.canvas?.prompt) {
-                        app.canvas.prompt("Contact sheet title", prevTitle, (v) => res(v ?? prevTitle), null);
+                        app.canvas.prompt(T("Contact sheet title"), prevTitle, (v) => res(v ?? prevTitle), null);
                     } else {
-                        res(window.prompt("Contact sheet title", prevTitle));
+                        res(window.prompt(T("Contact sheet title"), prevTitle));
                     }
                 });
             node.erExportSheet = async () => {
@@ -859,25 +877,25 @@ app.registerExtension({
                 if (title === null) return; // cancelado
                 node.properties.er_title = title;
                 status.style.color = ER.accent;
-                status.textContent = "building contact sheet...";
+                setStatus("building contact sheet...");
                 // el sequencer siempre descarga; el guardado a carpeta vive
                 // en los nodos ER Wedge Preview
                 const res = await exportSheet(results, String(title).trim(), "");
                 if (!res) {
                     status.style.color = ER.error;
-                    status.textContent = "no results to export";
+                    setStatus("no results to export");
                 } else if (!res.ok) {
                     status.style.color = ER.error;
-                    status.textContent = `save failed: ${res.error}`;
+                    setStatus("save failed: {error}", { error: res.error });
                 } else {
                     status.style.color = ER.textDim;
                     if (res.path) {
-                        status.textContent = `saved: ${res.path}`;
-                        status.title = "click: copy path";
+                        setStatus("saved: {path}", { path: res.path });
+                        status.title = T("click: copy path");
                         status.style.cursor = "pointer";
                         status.onclick = () => navigator.clipboard?.writeText(res.path);
                     } else {
-                        status.textContent = `results: ${results.length}`;
+                        setStatus("results: {n}", { n: results.length });
                     }
                 }
             };
@@ -903,9 +921,39 @@ app.registerExtension({
                     if (!results.length && Array.isArray(node.properties?.er_wedge_results)) {
                         results = node.properties.er_wedge_results.slice();
                         for (const r of results) renderResult(r);
-                        if (results.length) status.textContent = `results: ${results.length}`;
+                        if (results.length) setStatus("results: {n}", { n: results.length });
                     }
                 }, 300);
+            };
+
+            // language switch: retranslate the bar, the wedges and the status
+            node._erRelabel = () => {
+                addBatchBtn.textContent = T("＋ Wedge");
+                addBatchBtn.title = T("Add a wedge: one run (or several) with its own parameter values");
+                runBtn.textContent = running ? T("⏳ queueing...") : T("▶ Run wedges");
+                runBtn.title = T("Run every wedge in order");
+                clearBtn.title = T("Clear results");
+                for (const b of batches) {
+                    const els = b.els || {};
+                    if (els.addP) {
+                        els.addP.textContent = T("＋ param");
+                        els.addP.title = T("Add a parameter to this wedge");
+                    }
+                    if (els.dup) els.dup.title = T("Duplicate this wedge");
+                    if (els.delB) els.delB.title = T("Remove this wedge");
+                    for (const pr of b.params || []) {
+                        if (pr.els?.values) pr.els.values.placeholder = T("values  |  7,7.5,8  |  rand3");
+                        if (pr.els?.del) pr.els.del.title = T("Remove this parameter");
+                        pr.refill?.();
+                    }
+                }
+                renumber();
+                // result cells keep their label (W1 · seed: ...) but the
+                // hover hint is UI text and must follow the language
+                for (const el of grid.querySelectorAll(".er-wcell img, .er-wcell video")) {
+                    el.title = T("click: open full size");
+                }
+                if (statusKey) setStatus(statusKey, statusVars);
             };
 
             resize();
@@ -944,25 +992,32 @@ function setupPreviewNode(nodeType, kind) {
         srcSel.style.cssText = "font-size:10px;max-width:190px;padding:2px 5px;";
         const titleInp = document.createElement("input");
         titleInp.type = "text";
-        titleInp.placeholder = "Sheet title (e.g. Anime characters)";
+        titleInp.placeholder = T("Sheet title (e.g. Anime characters)");
         titleInp.className = "er-input";
         titleInp.style.cssText = "flex:1;min-width:90px;font-size:11px;padding:3px 7px;";
         titleInp.value = node.properties.er_title || "";
         // carpeta de destino del contact sheet (vacio = descarga navegador)
         const dirInp = document.createElement("input");
         dirInp.type = "text";
-        dirInp.placeholder = "Sheet folder (empty = download)";
-        dirInp.title = "Where to save the contact sheet. Empty = browser download.";
+        dirInp.placeholder = T("Sheet folder (empty = download)");
+        dirInp.title = T("Where to save the contact sheet. Empty = browser download.");
         dirInp.className = "er-input";
         dirInp.style.cssText = "flex:1;min-width:80px;font-size:11px;padding:3px 7px;";
         dirInp.value = node.properties.er_sheet_dir || "";
         const sheetBtn = document.createElement("button");
-        sheetBtn.textContent = "🖼 Contact sheet";
-        sheetBtn.title = "Save one PNG with every result and its values";
+        sheetBtn.textContent = T("🖼 Contact sheet");
+        sheetBtn.title = T("Save one PNG with every result and its values");
         sheetBtn.className = "er-btn";
         sheetBtn.style.cssText = "height:22px;font-size:11px;line-height:1;padding:0 10px;";
         const status = document.createElement("span");
         status.style.cssText = `color:${ER.textDim};`;
+        let statusKey = null;
+        let statusVars = null;
+        const setStatus = (key, vars) => {
+            statusKey = key || null;
+            statusVars = vars || null;
+            status.textContent = statusKey ? TF(statusKey, statusVars) : "";
+        };
         topBar.append(srcSel, titleInp, dirInp, sheetBtn, status);
 
         const gallery = document.createElement("div");
@@ -1014,7 +1069,7 @@ function setupPreviewNode(nodeType, kind) {
             srcSel.innerHTML = "";
             const all = document.createElement("option");
             all.value = "all";
-            all.textContent = "All wedge sequencers";
+            all.textContent = T("All wedge sequencers");
             srcSel.appendChild(all);
             for (const s of seqs) {
                 const o = document.createElement("option");
@@ -1037,16 +1092,18 @@ function setupPreviewNode(nodeType, kind) {
                 const empty = document.createElement("div");
                 empty.className = "er-dim";
                 empty.style.cssText = "padding:18px;text-align:center;";
-                empty.textContent = `No ${kind} results yet — run a wedge sequencer to populate this preview.`;
+                empty.textContent = TF("No {kind} results yet — run a wedge sequencer to populate this preview.", {
+                    kind: T(kind),
+                });
                 gallery.appendChild(empty);
-                status.textContent = "";
+                setStatus(null);
                 return;
             }
             // flujo continuo en orden de wedge; cada imagen ya lleva su
             // etiqueta W1/W2... superpuesta
             for (const e of entries) gallery.appendChild(mkResultCell(e, 12));
             gallery._erLayout();
-            status.textContent = `${entries.length} results`;
+            setStatus("{n} results", { n: entries.length });
         };
 
         srcSel.addEventListener("change", () => {
@@ -1077,7 +1134,7 @@ function setupPreviewNode(nodeType, kind) {
 
         node.erExportSheet = async () => {
             status.style.color = ER.accent;
-            status.textContent = "building contact sheet...";
+            setStatus("building contact sheet...");
             const res = await exportSheet(
                 selectedEntries(),
                 (titleInp.value || "").trim(),
@@ -1085,19 +1142,19 @@ function setupPreviewNode(nodeType, kind) {
             );
             if (!res) {
                 status.style.color = ER.error;
-                status.textContent = "no results to export";
+                setStatus("no results to export");
             } else if (!res.ok) {
                 status.style.color = ER.error;
-                status.textContent = `save failed: ${res.error}`;
+                setStatus("save failed: {error}", { error: res.error });
             } else {
                 status.style.color = ER.textDim;
                 if (res.path) {
-                    status.textContent = `saved: ${res.path}`;
-                    status.title = "click: copy path";
+                    setStatus("saved: {path}", { path: res.path });
+                    status.title = T("click: copy path");
                     status.style.cursor = "pointer";
                     status.onclick = () => navigator.clipboard?.writeText(res.path);
                 } else {
-                    status.textContent = `${selectedEntries().length} results`;
+                    setStatus("{n} results", { n: selectedEntries().length });
                 }
             }
         };
@@ -1105,6 +1162,19 @@ function setupPreviewNode(nodeType, kind) {
             e.stopPropagation();
             node.erExportSheet();
         });
+
+        // language switch: retranslate the static controls and the gallery
+        node._erRelabel = () => {
+            titleInp.placeholder = T("Sheet title (e.g. Anime characters)");
+            dirInp.placeholder = T("Sheet folder (empty = download)");
+            dirInp.title = T("Where to save the contact sheet. Empty = browser download.");
+            sheetBtn.textContent = T("🖼 Contact sheet");
+            sheetBtn.title = T("Save one PNG with every result and its values");
+            srcSel.dataset.want = "";
+            lastHash = "";
+            render();
+            if (statusKey) setStatus(statusKey, statusVars);
+        };
 
         // refresco periodico: refleja en vivo lo que van produciendo los
         // sequencers; el tick corto mantiene la galeria ajustada al nodo

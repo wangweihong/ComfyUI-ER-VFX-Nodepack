@@ -1,5 +1,6 @@
 import { app } from "../../scripts/app.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme(); // inyecta el tema ER Academy una sola vez
 
@@ -42,6 +43,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         // logo en la barra de título
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
@@ -113,14 +115,18 @@ app.registerExtension({
                         if (r) setLabel("→ ", `${r[0]} × ${r[1]}`);
                         else setLabel("→ …");
                     } else if (node._erLastRes) {
-                        setLabel("→ ", `${node._erLastRes[0]} × ${node._erLastRes[1]}`, " (auto)");
+                        setLabel("→ ", `${node._erLastRes[0]} × ${node._erLastRes[1]}`, " " + T("(auto)"));
                     } else {
-                        setLabel("→ auto (run once)");
+                        setLabel("→ " + T("auto (run once)"));
                     }
                 }
                 node._erResRaf = requestAnimationFrame(update);
             };
             node._erResRaf = requestAnimationFrame(update);
+            // language switch: force the label to be recomputed
+            node._erRelabel = () => {
+                lastKey = null;
+            };
 
             const onRemoved = node.onRemoved;
             node.onRemoved = function () {

@@ -203,9 +203,24 @@ class ERWedgePreviewVideo(ERWedgePreview):
 
 
 def _sheet_font(size):
-    """Fuente para las hojas de contacto (con fallback multiplataforma)."""
+    """Fuente para las hojas de contacto (fallback multiplataforma).
+
+    Las fuentes CJK van primero: el titulo y las etiquetas pueden venir en
+    chino (la UI del nodo es bilingue) y Arial/DejaVu no tienen esos glifos.
+    El texto en ingles se dibuja igual de bien con estas fuentes."""
     from PIL import ImageFont
-    for name in ("arialbd.ttf", "arial.ttf", "segoeui.ttf", "DejaVuSans-Bold.ttf", "DejaVuSans.ttf"):
+    for name in (
+        # CJK-capable (Windows / macOS / Linux)
+        "msyhbd.ttc", "msyh.ttc", "simhei.ttf", "simsun.ttc",
+        "PingFang.ttc", "Hiragino Sans GB.ttc", "STHeiti Medium.ttc",
+        "NotoSansCJK-Bold.ttc", "NotoSansCJK-Regular.ttc",
+        "NotoSansSC-Bold.otf", "NotoSansSC-Regular.otf",
+        "SourceHanSansCN-Bold.otf", "SourceHanSansCN-Regular.otf",
+        "wqy-microhei.ttc", "wqy-zenhei.ttc", "arialuni.ttf",
+        # latin fallbacks
+        "arialbd.ttf", "arial.ttf", "segoeui.ttf",
+        "DejaVuSans-Bold.ttf", "DejaVuSans.ttf",
+    ):
         try:
             return ImageFont.truetype(name, size)
         except Exception:

@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, erLocalizeNodeDef } from "./er_i18n.js";
 
 erTheme(); // inyecta la hoja de estilos ER Academy
 
@@ -56,6 +57,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         // logo en la barra de título
         // en cada redibujado, el visor se ajusta al tamano actual del nodo
@@ -148,10 +150,10 @@ app.registerExtension({
                 return b;
             };
             const pickBtns = {
-                bp: mkBtn("⚫ In black", "Pick the blackpoint on YOUR image"),
-                wp: mkBtn("⚪ In white", "Pick the whitepoint on YOUR image"),
-                lift: mkBtn("⚫ Ref black", "Pick the target black on the REFERENCE image"),
-                gain: mkBtn("⚪ Ref white", "Pick the target white on the REFERENCE image"),
+                bp: mkBtn(T("⚫ In black"), T("Pick the blackpoint on YOUR image")),
+                wp: mkBtn(T("⚪ In white"), T("Pick the whitepoint on YOUR image")),
+                lift: mkBtn(T("⚫ Ref black"), T("Pick the target black on the REFERENCE image")),
+                gain: mkBtn(T("⚪ Ref white"), T("Pick the target white on the REFERENCE image")),
             };
             pickerRow.append(pickBtns.bp, pickBtns.wp, pickBtns.lift, pickBtns.gain);
 
@@ -159,11 +161,11 @@ app.registerExtension({
             const controls = document.createElement("div");
             controls.style.cssText = "display:none;align-items:center;gap:6px;flex:0 0 auto;";
             const viewBtns = {
-                result: mkBtn("Result", "The graded output image"),
-                input: mkBtn("Input", "Your ORIGINAL image, untouched (where In black/white pick)"),
-                ref: mkBtn("Ref", "The reference image (where Ref black/white pick)"),
+                result: mkBtn(T("Result"), T("The graded output image")),
+                input: mkBtn(T("Input"), T("Your ORIGINAL image, untouched (where In black/white pick)")),
+                ref: mkBtn(T("Ref"), T("The reference image (where Ref black/white pick)")),
             };
-            const resetBtn = mkBtn("Reset", "Reset points and parameters");
+            const resetBtn = mkBtn(T("Reset"), T("Reset points and parameters"));
             // los tabs y Reset no llevan franja swatch: borde uniforme de er-btn
             for (const b of Object.values(viewBtns)) b.style.borderBottom = "";
             resetBtn.style.borderBottom = "";
@@ -313,7 +315,7 @@ app.registerExtension({
             const armPick = (key) => {
                 // los pickers de referencia necesitan una referencia cargada
                 if ((key === "lift" || key === "gain") && !refImage && pickMode !== key) {
-                    flashHint("No reference loaded: connect an image to the 'reference' input (it loads instantly from a Load Image) or run the workflow once.");
+                    flashHint(T("No reference loaded: connect an image to the 'reference' input (it loads instantly from a Load Image) or run the workflow once."));
                     return;
                 }
                 pickMode = pickMode === key ? null : key;
@@ -328,7 +330,7 @@ app.registerExtension({
                 stage.style.cursor = pickMode ? "crosshair" : "default";
                 pickHint.style.display = pickMode ? "block" : "none";
                 pickHint.style.color = ER.text; // restaura color tras un aviso
-                if (pickMode) pickHint.textContent = HINTS[pickMode];
+                if (pickMode) pickHint.textContent = T(HINTS[pickMode]);
                 lastApplied = null;
             };
             for (const [k, b] of Object.entries(pickBtns)) {
@@ -500,6 +502,27 @@ app.registerExtension({
                     pointsWidget.value = JSON.stringify(DEFAULT_POINTS);
                 }
                 updateSwatches();
+            };
+
+            // language switch: retranslate the static buttons and the active hint
+            node._erRelabel = () => {
+                pickBtns.bp.textContent = T("⚫ In black");
+                pickBtns.bp.title = T("Pick the blackpoint on YOUR image");
+                pickBtns.wp.textContent = T("⚪ In white");
+                pickBtns.wp.title = T("Pick the whitepoint on YOUR image");
+                pickBtns.lift.textContent = T("⚫ Ref black");
+                pickBtns.lift.title = T("Pick the target black on the REFERENCE image");
+                pickBtns.gain.textContent = T("⚪ Ref white");
+                pickBtns.gain.title = T("Pick the target white on the REFERENCE image");
+                viewBtns.result.textContent = T("Result");
+                viewBtns.result.title = T("The graded output image");
+                viewBtns.input.textContent = T("Input");
+                viewBtns.input.title = T("Your ORIGINAL image, untouched (where In black/white pick)");
+                viewBtns.ref.textContent = T("Ref");
+                viewBtns.ref.title = T("The reference image (where Ref black/white pick)");
+                resetBtn.textContent = T("Reset");
+                resetBtn.title = T("Reset points and parameters");
+                if (pickMode) pickHint.textContent = T(HINTS[pickMode]);
             };
 
             const onRemoved = node.onRemoved;

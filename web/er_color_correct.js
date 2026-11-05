@@ -1,6 +1,7 @@
 import { app } from "../../scripts/app.js";
 import { api } from "../../scripts/api.js";
 import { erTheme, erBrandNode, ER } from "./er_theme.js";
+import { T, TF, erLocalizeNodeDef } from "./er_i18n.js";
 
 // inyecta la hoja de estilos ER Academy una sola vez
 erTheme();
@@ -222,6 +223,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
         if (nodeData.name !== NODE_TYPE) return;
+        erLocalizeNodeDef(nodeData, NODE_TYPE);
 
         // logo en la barra de título
         nodeType.prototype.onDrawTitleBox = function (ctx, height) {
@@ -312,11 +314,11 @@ app.registerExtension({
             wHead.style.cssText = "display:flex;align-items:center;gap:6px;cursor:pointer;";
             const wFold = document.createElement("button");
             wFold.className = "er-btn";
-            wFold.title = "Expand/collapse";
+            wFold.title = T("Expand/collapse");
             wFold.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 6px;";
             const wTitle = document.createElement("span");
             wTitle.className = "er-title";
-            wTitle.textContent = "Wheels";
+            wTitle.textContent = T("Wheels");
             wTitle.style.cssText = "flex:1;";
             wHead.append(wFold, wTitle);
             const wheelsRow = document.createElement("div");
@@ -342,6 +344,7 @@ app.registerExtension({
             applyWheelsFold();
 
             const wheelCanvases = [];
+            const wheelTagEls = [];
             const drawWheelFns = [];
             WHEELS.forEach((label, wi) => {
                 const col = document.createElement("div");
@@ -349,10 +352,11 @@ app.registerExtension({
                 const wheel = document.createElement("canvas");
                 wheel.width = WHEEL_SIZE;
                 wheel.height = WHEEL_SIZE;
-                wheel.title = `${label}: drag to tint, double click to reset`;
+                wheel.title = TF("{label}: drag to tint, double click to reset", { label: T(label) });
                 wheel.style.cssText = `width:${WHEEL_SIZE}px;height:${WHEEL_SIZE}px;display:block;cursor:crosshair;`;
                 const tag = document.createElement("div");
-                tag.textContent = label;
+                tag.textContent = T(label);
+                wheelTagEls.push(tag);
                 tag.className = "er-title"; // etiqueta cian en mayúsculas
                 tag.style.cssText = "font-size:10px;user-select:none;";
                 col.append(wheel, tag);
@@ -446,8 +450,8 @@ app.registerExtension({
                     "height:20px;font-size:10px;line-height:1;padding:0 10px;";
                 return b;
             };
-            const resetBtn = mkBtn("Reset", "Reset all parameters and wheels");
-            const origBtn = mkBtn("👁 Original", "Hold to see the original image");
+            const resetBtn = mkBtn(T("Reset"), T("Reset all parameters and wheels"));
+            const origBtn = mkBtn(T("👁 Original"), T("Hold to see the original image"));
             controls.append(resetBtn, origBtn);
 
             // ---------- vectorscopio (traza en vivo + linea de piel) ----------
@@ -460,16 +464,16 @@ app.registerExtension({
             sHead.style.cssText = "display:flex;align-items:center;gap:6px;cursor:pointer;";
             const sFold = document.createElement("button");
             sFold.className = "er-btn";
-            sFold.title = "Expand/collapse";
+            sFold.title = T("Expand/collapse");
             sFold.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 6px;";
             const sTitle = document.createElement("span");
             sTitle.className = "er-title";
-            sTitle.textContent = "Vectorscope";
+            sTitle.textContent = T("Vectorscope");
             sTitle.style.cssText = "flex:1;";
             const sNote = document.createElement("span");
             sNote.className = "er-dim";
             sNote.style.cssText = "font-size:9px;";
-            sNote.textContent = "corrected trace · skin tone line";
+            sNote.textContent = T("corrected trace · skin tone line");
             sHead.append(sFold, sTitle, sNote);
             const sBody = document.createElement("div");
             sBody.style.cssText = "display:none;justify-content:center;";
@@ -538,7 +542,8 @@ app.registerExtension({
                 ];
                 const pts = targets.map(([name, r, g, b, hdeg]) => {
                     const [cb, cr] = cbcr(r, g, b);
-                    return [name, cx + cb * 2 * R, cx - cr * 2 * R, hdeg];
+                    // band names follow the interface language (R -> 红 ...)
+                    return [T(name), cx + cb * 2 * R, cx - cr * 2 * R, hdeg];
                 });
                 // hexagono tenue conectando las dianas (guia de gamut 75%)
                 sctx.strokeStyle = "rgba(92,225,230,.10)";
@@ -579,7 +584,7 @@ app.registerExtension({
                 sctx.rotate(Math.PI / 4);
                 sctx.fillRect(-3, -3, 6, 6);
                 sctx.restore();
-                sctx.fillText("skin", cx + Math.cos(a) * R * 0.8 + 5, cx - Math.sin(a) * R * 0.8);
+                sctx.fillText(T("skin"), cx + Math.cos(a) * R * 0.8 + 5, cx - Math.sin(a) * R * 0.8);
             };
             const drawScope = () => {
                 if (!scopeOpen() || !srcImage) return;
@@ -638,24 +643,24 @@ app.registerExtension({
             cHead.style.cssText = "display:flex;align-items:center;gap:6px;cursor:pointer;";
             const cFold = document.createElement("button");
             cFold.className = "er-btn";
-            cFold.title = "Expand/collapse";
+            cFold.title = T("Expand/collapse");
             cFold.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 6px;";
             const cTitle = document.createElement("span");
             cTitle.className = "er-title";
-            cTitle.textContent = "Secondaries";
+            cTitle.textContent = T("Secondaries");
             const cNote = document.createElement("span");
             cNote.className = "er-dim";
             cNote.style.cssText = "font-size:9px;flex:1;";
-            cNote.textContent = "isolate reds, blues…";
+            cNote.textContent = T("isolate reds, blues…");
             const maskBtn = document.createElement("button");
             maskBtn.className = "er-btn";
-            maskBtn.textContent = "👁 Mask";
-            maskBtn.title = "Preview the isolated band as a mask (white = affected)";
+            maskBtn.textContent = T("👁 Mask");
+            maskBtn.title = T("Preview the isolated band as a mask (white = affected)");
             maskBtn.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 8px;";
             const cReset = document.createElement("button");
             cReset.className = "er-btn";
             cReset.textContent = "⟲";
-            cReset.title = "Reset every band";
+            cReset.title = T("Reset every band");
             cReset.style.cssText = "height:20px;font-size:11px;line-height:1;padding:0 7px;";
             cHead.append(cFold, cTitle, cNote, maskBtn, cReset);
             const cBody = document.createElement("div");
@@ -666,8 +671,8 @@ app.registerExtension({
             const chips = [];
             SEC_CENTERS.forEach((c, i) => {
                 const chip = document.createElement("button");
-                chip.title = `${SEC_NAMES[i]} band (${c}°)`;
-                chip.textContent = SEC_NAMES[i];
+                chip.title = TF("{name} band ({deg}°)", { name: T(SEC_NAMES[i]), deg: c });
+                chip.textContent = T(SEC_NAMES[i]);
                 chip.style.cssText =
                     "width:30px;height:22px;font-size:9px;font-weight:bold;color:#111;" +
                     `background:hsl(${c},75%,55%);border:2px solid transparent;border-radius:4px;cursor:pointer;`;
@@ -712,7 +717,7 @@ app.registerExtension({
                 wrap.style.cssText = "display:flex;align-items:center;gap:4px;";
                 const tag = document.createElement("span");
                 tag.className = "er-dim";
-                tag.textContent = label;
+                tag.textContent = T(label);
                 tag.style.cssText = "font-size:9px;width:56px;flex:0 0 auto;user-select:none;";
                 const inp = document.createElement("input");
                 inp.type = "range";
@@ -720,7 +725,7 @@ app.registerExtension({
                 inp.min = String(min);
                 inp.max = String(max);
                 inp.step = String(step);
-                inp.title = label + " of the selected band (double click: reset)";
+                inp.title = TF("{label} of the selected band (double click: reset)", { label: T(label) });
                 inp.style.cssText = "flex:1;height:12px;cursor:pointer;min-width:30px;";
                 const num = document.createElement("input");
                 num.type = "number";
@@ -732,7 +737,7 @@ app.registerExtension({
                 const rst = document.createElement("button");
                 rst.className = "er-btn";
                 rst.textContent = "⟲";
-                rst.title = "Reset " + label;
+                rst.title = TF("Reset {label}", { label: T(label) });
                 rst.style.cssText = "height:16px;font-size:9px;line-height:1;padding:0 4px;flex:0 0 auto;";
                 const push = (v, syncNum, syncRange) => {
                     const val = Math.min(max, Math.max(min, Number(v)));
@@ -828,16 +833,16 @@ app.registerExtension({
                     const fold = document.createElement("button");
                     fold.className = "er-btn";
                     fold.textContent = open ? "▾" : "▸";
-                    fold.title = "Expand/collapse";
+                    fold.title = T("Expand/collapse");
                     fold.style.cssText = "height:20px;font-size:10px;line-height:1;padding:0 6px;";
                     const title = document.createElement("span");
                     title.className = "er-title";
-                    title.textContent = gtitle;
+                    title.textContent = T(gtitle);
                     title.style.cssText = "flex:1;";
                     const greset = document.createElement("button");
                     greset.className = "er-btn";
                     greset.textContent = "⟲";
-                    greset.title = "Reset this group";
+                    greset.title = T("Reset this group");
                     greset.style.cssText = "height:20px;font-size:11px;line-height:1;padding:0 7px;";
                     head.append(fold, title, greset);
                     const body = document.createElement("div");
@@ -848,7 +853,7 @@ app.registerExtension({
                         wrap.style.cssText = "display:flex;align-items:center;gap:4px;";
                         const tag = document.createElement("span");
                         tag.className = "er-dim";
-                        tag.textContent = label;
+                        tag.textContent = T(label);
                         tag.style.cssText = "font-size:9px;width:56px;flex:0 0 auto;user-select:none;";
                         const inp = document.createElement("input");
                         inp.type = "range";
@@ -857,7 +862,7 @@ app.registerExtension({
                         inp.max = String(max);
                         inp.step = String(step);
                         inp.value = String(p[key]);
-                        inp.title = label + " (double click: reset)";
+                        inp.title = TF("{label} (double click: reset)", { label: T(label) });
                         inp.style.cssText = "flex:1;height:12px;cursor:pointer;min-width:30px;";
                         const num = document.createElement("input");
                         num.type = "number";
@@ -870,7 +875,7 @@ app.registerExtension({
                         const rst = document.createElement("button");
                         rst.className = "er-btn";
                         rst.textContent = "⟲";
-                        rst.title = "Reset " + label;
+                        rst.title = TF("Reset {label}", { label: T(label) });
                         rst.style.cssText = "height:16px;font-size:9px;line-height:1;padding:0 4px;flex:0 0 auto;";
                         const push = (v, syncNum, syncRange) => {
                             const val = Math.min(max, Math.max(min, Number(v)));
@@ -1040,7 +1045,7 @@ app.registerExtension({
             const abBtn = document.createElement("button");
             abBtn.className = "er-btn";
             abBtn.textContent = "A|B";
-            abBtn.title = "Toggle before/after";
+            abBtn.title = T("Toggle before/after");
             abBtn.style.cssText =
                 "position:absolute;top:6px;right:6px;height:22px;font-size:11px;line-height:1;padding:0 8px;opacity:.85;";
             stage.appendChild(abBtn);
@@ -1159,6 +1164,40 @@ app.registerExtension({
             setTimeout(() => {
                 if (!node._erConfigured && !paramsW?.value?.startsWith("{")) saveP({ ...DEFAULTS });
             }, 400);
+
+            // language switch: retranslate the static labels and rebuild panels
+            node._erRelabel = () => {
+                wFold.title = T("Expand/collapse");
+                wTitle.textContent = T("Wheels");
+                WHEELS.forEach((label, i) => {
+                    if (wheelTagEls[i]) wheelTagEls[i].textContent = T(label);
+                    if (wheelCanvases[i]) {
+                        wheelCanvases[i].title = TF("{label}: drag to tint, double click to reset", { label: T(label) });
+                    }
+                });
+                sFold.title = T("Expand/collapse");
+                sTitle.textContent = T("Vectorscope");
+                sNote.textContent = T("corrected trace · skin tone line");
+                cFold.title = T("Expand/collapse");
+                cTitle.textContent = T("Secondaries");
+                cNote.textContent = T("isolate reds, blues…");
+                maskBtn.textContent = T("👁 Mask");
+                maskBtn.title = T("Preview the isolated band as a mask (white = affected)");
+                cReset.title = T("Reset every band");
+                SEC_CENTERS.forEach((c, i) => {
+                    const chip = chips[i];
+                    if (!chip) return;
+                    chip.textContent = T(SEC_NAMES[i]);
+                    chip.title = TF("{name} band ({deg}°)", { name: T(SEC_NAMES[i]), deg: c });
+                });
+                resetBtn.textContent = T("Reset");
+                resetBtn.title = T("Reset all parameters and wheels");
+                origBtn.textContent = T("👁 Original");
+                origBtn.title = T("Hold to see the original image");
+                abBtn.title = T("Toggle before/after");
+                rebuildPanels();
+                drawScope();
+            };
 
             const onRemoved = node.onRemoved;
             node.onRemoved = function () {
